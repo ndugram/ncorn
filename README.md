@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./docs/logo.png" style="background:white; padding:12px; border-radius:10px; width:350">
+  <img src="https://ncorn.readthedocs.io/en/latest/logo.png" style="background:white; padding:12px; border-radius:10px; width:350">
 </p>
 
 <div align="center">
@@ -18,6 +18,13 @@
 - **Auto-Reload** - Development mode with file watching
 - **Clean Logging** - Beautiful uvicorn-style console output
 - **Security** - Header validation, body size limits, IP rate limiting
+
+## Security Features
+
+- **Max Body Size** - Limits request body to prevent DoS attacks
+- **Header Validation** - Validates HTTP headers and rejects invalid requests
+- **Slowloris Protection** - Timeout for header and body reads
+- **IP Rate Limiting** - Limits requests per IP address
 
 ## Installation
 
@@ -76,21 +83,6 @@ Example configuration:
 
 Command line options override config file settings.
 
-## CLI Options
-
-| Option | Description | Default |
-|--------|-------------|---------|
-| `app` | Application in format `module:app` | Required |
-| `--host` | Host to bind to | 127.0.0.1 |
-| `--port` | Port to bind to | 8000 |
-| `--workers` | Number of worker processes | 1 |
-| `--reload` | Enable auto-reload on file changes | false |
-| `--max-body-size` | Maximum request body size in bytes | 16777216 |
-| `--header-timeout` | Header read timeout in seconds | 30.0 |
-| `--rate-limit` | Rate limit requests per window | 100 |
-| `--rate-limit-window` | Rate limit window in seconds | 60.0 |
-| `--verbose` | Enable verbose logging | false |
-
 ## Example FastAPI App
 
 ```python
@@ -122,32 +114,6 @@ Run it:
 
 ```bash
 ncorn example_app:app
-```
-
-## Security Features
-
-- **Max Body Size** - Limits request body to prevent DoS attacks
-- **Header Validation** - Validates HTTP headers and rejects invalid requests
-- **Slowloris Protection** - Timeout for header and body reads
-- **IP Rate Limiting** - Limits requests per IP address
-
-## Architecture
-
-```
-ncorn/
-├── __init__.py       # Package init
-├── main.py           # Entry point
-├── cli.py            # CLI interface
-├── server.py         # TCP server
-├── protocol.py       # HTTP parser
-├── asgi.py           # ASGI adapter
-├── config.py         # Configuration
-├── logging.py        # Logging
-├── reload.py         # Auto-reload
-└── middleware/
-    ├── base.py       # Middleware base
-    ├── validation.py # Request validation
-    └── ratelimit.py  # Rate limiting
 ```
 
 ## License
