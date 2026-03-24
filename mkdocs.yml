@@ -1,0 +1,101 @@
+site_name: ncorn
+site_description: Production-ready ASGI web server for FastAPI applications
+site_author: White NEFOR
+site_url: https://ncorn.readthedocs.io/
+
+docs_dir: docs
+
+repo_url: https://github.com/ndugram/ncorn
+repo_name: ndugram/ncorn
+
+copyright: |
+  Copyright &copy; 2026 White NEFOR
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/ndugram/ncorn
+
+  alternate:
+    - link: /
+      name: English
+    - link: /ru/
+      name: Russian
+
+nav:
+  - Home: index.md
+  - English:
+    - Quick Start: en/quick-start.md
+    - CLI: en/cli.md
+    - Configuration: en/configuration.md
+    - Examples: en/examples.md
+    - Dependencies: en/dependencies.md
+    - Security: en/security.md
+    - Middleware: en/middleware.md
+    - API Reference: en/api-reference.md
+  - Russian:
+    - Main: ru/index.md
+    - Quick Start: ru/quick-start.md
+    - CLI: ru/cli.md
+    - Configuration: ru/configuration.md
+    - Examples: ru/examples.md
+    - Dependencies: ru/dependencies.md
+    - Security: ru/security.md
+    - Middleware: ru/middleware.md
+    - API Reference: ru/api-reference.md
+
+theme:
+  name: material
+  language: en
+  logo: logo.png
+  favicon: logo.png
+
+  icon:
+    repo: fontawesome/brands/github
+
+  palette:
+    - scheme: default
+      primary: deep orange
+      accent: orange
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+
+    - scheme: slate
+      primary: deep orange
+      accent: orange
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.tabs.hover
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - content.code.copy
+    - content.code.annotate
+    - search.suggest
+    - search.highlight
+
+markdown_extensions:
+  - admonition
+  - tables
+  - attr_list
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+
+plugins:
+  - search
