@@ -2,24 +2,18 @@ import os
 import sys
 import asyncio
 import argparse
-from typing import Optional, Annotated
-
-from annotated_doc import Doc
+import json
+from typing import Optional
 
 from .config import Config
+from .config_file import load_config_from_file, create_default_config, get_config_path, CONFIG_FILE
 from .server import HTTPServer
 from .logging import logger
-from .middleware import ValidationMiddleware, RateLimitMiddleware, MiddlewareChain, IPFilterMiddleware, SecurityHeadersMiddleware, WAFMiddleware
+from .middleware import ValidationMiddleware, RateLimitMiddleware, MiddlewareChain
 from .reload import run_with_reload
 
 
-def parse_args(args: Annotated[
-    Optional[list[str]],
-    Doc("Command line arguments")
-]) -> Annotated[
-    argparse.Namespace,
-    Doc("Parsed arguments")
-]:
+def parse_args(args: Optional[list[str]] = None) -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
         prog="ncorn",
@@ -29,14 +23,7 @@ def parse_args(args: Annotated[
         "app",
         nargs="?",
         default=None,
-        help="Application in format 'module:app'",
-    )
-    parser.add_argument(
-        "command",
-        nargs="?",
-        default=None,
-        choices=["run", "config"],
-        help="Command (run or config)",
+        help="Application in format 'module:app' or 'config' command",
     )
     parser.add_argument(
         "--host",
@@ -52,73 +39,50 @@ def parse_args(args: Annotated[
     parser.add_argument(
         "--reload",
         action="store_true",
-        help="Enable auto-reload",
+        default=None,
+        help="Enable auto-reload on file changes",
     )
     parser.add_argument(
         "--workers",
         type=int,
         default=None,
-        help="Number of workers",
+        help="Number of worker processes",
     )
     parser.add_argument(
         "--max-body-size",
         type=int,
         default=None,
-        help="Max body size in bytes",
-    )
-    parser.add_argument(
-        "--max-header-size",
-        type=int,
-        default=None,
-        help="Max size of a single header",
-    )
-    parser.add_argument(
-        "--max-headers-total-size",
-        type=int,
-        default=None,
-        help="Max total size of all headers",
+        help="Maximum request body size in bytes",
     )
     parser.add_argument(
         "--header-timeout",
         type=float,
         default=None,
-        help="Header read timeout",
+        help="Header read timeout in seconds",
     )
     parser.add_argument(
         "--body-timeout",
         type=float,
         default=None,
-        help="Body read timeout",
+        help="Body read timeout in seconds",
     )
     parser.add_argument(
-        "--request-timeout",
+        "--keepalive-timeout",
         type=float,
         default=None,
-        help="Request processing timeout",
+        help="Keep-alive timeout in seconds",
     )
     parser.add_argument(
-        "--max-connections",
+        "--max-headers",
         type=int,
         default=None,
-        help="Max total connections",
-    )
-    parser.add_argument(
-        "--max-connections-per-ip",
-        type=int,
-        default=None,
-        help="Max connections per IP",
+        help="Maximum number of headers",
     )
     parser.add_argument(
         "--keepalive-requests",
         type=int,
         default=None,
         help="Max requests per keep-alive connection",
-    )
-    parser.add_argument(
-        "--keepalive-timeout",
-        type=float,
-        default=None,
-        help="Keep-alive timeout",
     )
     parser.add_argument(
         "--rate-limit",
@@ -133,43 +97,44 @@ def parse_args(args: Annotated[
         help="Rate limit window in seconds",
     )
     parser.add_argument(
-        "--ip-blacklist",
-        nargs="*",
-        default=None,
-        help="IP addresses to block",
-    )
-    parser.add_argument(
-        "--ip-whitelist",
-        nargs="*",
-        default=None,
-        help="IP addresses to allow (blocks all others)",
-    )
-    parser.add_argument(
-        "--no-security-headers",
-        action="store_true",
-        help="Disable security headers",
-    )
-    parser.add_argument(
-        "--waf-max-query-length",
-        type=int,
-        default=None,
-        help="Max query string length for WAF",
-    )
-    parser.add_argument(
         "--verbose",
         action="store_true",
-        help="Verbose logging",
+        help="Enable verbose logging",
     )
     return parser.parse_args(args)
 
 
-def validate_fastapi_app(app: Annotated[
-    any,
-    Doc("FastAPI application to validate")
-]) -> Annotated[
-    None,
-    Doc("Raises ValueError if not a FastAPI app")
-]:
+def merge_config(file_config: Config, args: argparse.Namespace) -> Config:
+    """Merge file config with command line arguments."""
+    return Config(
+        host=args.host if args.host is not None else file_config.host,
+        port=args.port if args.port is not None else file_config.port,
+        workers=args.workers if args.workers is not None else file_config.workers,
+        reload=args.reload if args.reload is not None else file_config.reload,
+        max_body_size=args.max_body_size if args.max_body_size is not None else file_config.max_body_size,
+        max_header_size=file_config.max_header_size,
+        max_headers_total_size=file_config.max_headers_total_size,
+        header_timeout=args.header_timeout if args.header_timeout is not None else file_config.header_timeout,
+        body_timeout=args.body_timeout if args.body_timeout is not None else file_config.body_timeout,
+        request_timeout=file_config.request_timeout,
+        response_timeout=file_config.response_timeout,
+        keepalive_timeout=args.keepalive_timeout if args.keepalive_timeout is not None else file_config.keepalive_timeout,
+        keepalive_requests=args.keepalive_requests if args.keepalive_requests is not None else file_config.keepalive_requests,
+        max_headers=args.max_headers if args.max_headers is not None else file_config.max_headers,
+        max_connections=file_config.max_connections,
+        max_connections_per_ip=file_config.max_connections_per_ip,
+        rate_limit_requests=args.rate_limit if args.rate_limit is not None else file_config.rate_limit_requests,
+        rate_limit_window=args.rate_limit_window if args.rate_limit_window is not None else file_config.rate_limit_window,
+        write_buffer_limit=file_config.write_buffer_limit,
+        drain_timeout=file_config.drain_timeout,
+        ip_whitelist=file_config.ip_whitelist,
+        ip_blacklist=file_config.ip_blacklist,
+        enable_security_headers=file_config.enable_security_headers,
+        waf_max_query_length=file_config.waf_max_query_length,
+    )
+
+
+def validate_fastapi_app(app: any) -> None:
     """Validate that the app is a FastAPI application."""
     if app is None:
         raise ValueError("Application is None")
@@ -187,13 +152,7 @@ def validate_fastapi_app(app: Annotated[
         )
 
 
-def import_app(app_spec: Annotated[
-    str,
-    Doc("Application in format 'module:app'")
-]) -> Annotated[
-    any,
-    Doc("FastAPI application instance")
-]:
+def import_app(app_spec: str):
     """Import application from module:app string."""
     if ":" not in app_spec:
         raise ValueError("App must be in format 'module:app'")
@@ -227,25 +186,13 @@ def import_app(app_spec: Annotated[
 
 
 async def run_server(
-    app: Annotated[
-        any,
-        Doc("FastAPI application")
-    ],
-    config: Annotated[
-        Config,
-        Doc("Server configuration")
-    ],
-) -> Annotated[
-    None,
-    Doc("Runs server until interrupted")
-]:
+    app: any,
+    config: Config,
+) -> None:
     """Run the server."""
     middlewares = [
-        IPFilterMiddleware(app, config),
-        WAFMiddleware(app, config),
         ValidationMiddleware(app, config),
         RateLimitMiddleware(app, config),
-        SecurityHeadersMiddleware(app, config),
     ]
 
     chain = MiddlewareChain(app, middlewares)
@@ -260,16 +207,7 @@ async def run_server(
         await server.stop()
 
 
-def run_workers(app_spec: Annotated[
-    str,
-    Doc("Application in format 'module:app'")
-], config: Annotated[
-    Config,
-    Doc("Server configuration")
-]) -> Annotated[
-    None,
-    Doc("Runs multiple worker processes")
-]:
+def run_workers(app_spec: str, config: Config) -> None:
     """Run multiple worker processes."""
     import multiprocessing
 
@@ -303,45 +241,17 @@ def run_workers(app_spec: Annotated[
 
 
 def _worker_process(
-    app_spec: Annotated[
-        str,
-        Doc("Application in format 'module:app'")
-    ],
-    host: Annotated[
-        str,
-        Doc("Server host")
-    ],
-    port: Annotated[
-        int,
-        Doc("Server port")
-    ],
-    max_body_size: Annotated[
-        int,
-        Doc("Max body size")
-    ],
-    header_timeout: Annotated[
-        float,
-        Doc("Header timeout")
-    ],
-    rate_limit_requests: Annotated[
-        int,
-        Doc("Rate limit requests")
-    ],
-    rate_limit_window: Annotated[
-        float,
-        Doc("Rate limit window")
-    ],
-    worker_id: Annotated[
-        int,
-        Doc("Worker ID for staggered startup")
-    ],
-) -> Annotated[
-    None,
-    Doc("Single worker process")
-]:
+    app_spec: str,
+    host: str,
+    port: int,
+    max_body_size: int,
+    header_timeout: float,
+    rate_limit_requests: int,
+    rate_limit_window: float,
+    worker_id: int,
+) -> None:
     """Single worker process."""
     import time
-    from .config import Config
 
     time.sleep(worker_id * 0.1)
 
@@ -373,51 +283,34 @@ def _worker_process(
         pass
 
 
-def main(args: Annotated[
-    Optional[list[str]],
-    Doc("Command line arguments")
-] = None) -> Annotated[
-    None,
-    Doc("Main entry point")
-]:
+def show_config() -> None:
+    """Show current configuration."""
+    config_path = get_config_path()
+    
+    if not config_path:
+        create_default_config(CONFIG_FILE)
+        logger.success(f"Created {CONFIG_FILE} with default configuration")
+
+
+def main(args: Optional[list[str]] = None) -> None:
     """Main entry point."""
     parsed = parse_args(args)
 
-    app_arg = parsed.app
+    if parsed.app == "config":
+        show_config()
+        sys.exit(0)
 
-    if not app_arg:
+    if not parsed.app:
         print("Usage: ncorn <app> [options]")
+        print("       ncorn config")
         print("Run 'ncorn --help' for more information")
         sys.exit(1)
 
-    ip_whitelist = parsed.ip_whitelist if parsed.ip_whitelist else []
-    ip_blacklist = parsed.ip_blacklist if parsed.ip_blacklist else []
-
-    config = Config(
-        host=parsed.host if parsed.host else "127.0.0.1",
-        port=parsed.port if parsed.port else 8000,
-        workers=parsed.workers if parsed.workers else 1,
-        reload=parsed.reload if parsed.reload else False,
-        max_body_size=parsed.max_body_size if parsed.max_body_size else 16 * 1024 * 1024,
-        max_header_size=parsed.max_header_size if parsed.max_header_size else 8192,
-        max_headers_total_size=parsed.max_headers_total_size if parsed.max_headers_total_size else 65536,
-        header_timeout=parsed.header_timeout if parsed.header_timeout else 30.0,
-        body_timeout=parsed.body_timeout if parsed.body_timeout else 60.0,
-        request_timeout=parsed.request_timeout if parsed.request_timeout else 10.0,
-        keepalive_requests=parsed.keepalive_requests if parsed.keepalive_requests else 100,
-        keepalive_timeout=parsed.keepalive_timeout if parsed.keepalive_timeout else 5.0,
-        max_connections=parsed.max_connections if parsed.max_connections else 1000,
-        max_connections_per_ip=parsed.max_connections_per_ip if parsed.max_connections_per_ip else 50,
-        rate_limit_requests=parsed.rate_limit if parsed.rate_limit else 100,
-        rate_limit_window=parsed.rate_limit_window if parsed.rate_limit_window else 60.0,
-        ip_whitelist=ip_whitelist,
-        ip_blacklist=ip_blacklist,
-        enable_security_headers=not parsed.no_security_headers if hasattr(parsed, 'no_security_headers') else True,
-        waf_max_query_length=parsed.waf_max_query_length if parsed.waf_max_query_length else 4096,
-    )
+    file_config = load_config_from_file()
+    config = merge_config(file_config, parsed)
 
     try:
-        app = import_app(app_arg)
+        app = import_app(parsed.app)
     except Exception as e:
         logger.error(f"Failed to import app: {e}")
         sys.exit(1)
@@ -426,9 +319,9 @@ def main(args: Annotated[
         from .logging import logger as log
         log.verbose = True
 
-    if config.reload:
+    if parsed.reload:
         run_with_reload(
-            app_arg,
+            parsed.app,
             "app",
             config.host,
             config.port,
@@ -437,7 +330,7 @@ def main(args: Annotated[
         )
     elif config.workers > 1:
         logger.server_start(config.host, config.port, config.workers)
-        run_workers(app_arg, config)
+        run_workers(parsed.app, config)
     else:
         try:
             asyncio.run(run_server(app, config))
