@@ -64,20 +64,36 @@ Create a config file:
 ncorn config
 ```
 
-This creates `ncorn.cnf` with default settings. You can edit this file and ncorn will use these settings by default.
+This creates `ncorn.json` with default settings. You can edit this file and ncorn will use these settings by default.
 
 Example configuration:
 
 ```json
 {
-    "host": "127.0.0.1",
-    "port": 8000,
-    "workers": 1,
-    "reload": false,
-    "max_body_size": 16777216,
-    "header_timeout": 30.0,
-    "rate_limit_requests": 100,
-    "rate_limit_window": 60.0
+  "host": "127.0.0.1",
+  "port": 8000,
+  "workers": 1,
+  "reload": false,
+  "max_body_size": 16777216,
+  "max_header_size": 8192,
+  "max_headers_total_size": 65536,
+  "header_timeout": 30.0,
+  "body_timeout": 60.0,
+  "request_timeout": 10.0,
+  "response_timeout": 10.0,
+  "keepalive_timeout": 5.0,
+  "keepalive_requests": 100,
+  "max_headers": 100,
+  "max_connections": 1000,
+  "max_connections_per_ip": 50,
+  "rate_limit_requests": 100,
+  "rate_limit_window": 60.0,
+  "write_buffer_limit": 65536,
+  "drain_timeout": 1.0,
+  "ip_whitelist": [],
+  "ip_blacklist": [],
+  "enable_security_headers": true,
+  "waf_max_query_length": 4096
 }
 ```
 
