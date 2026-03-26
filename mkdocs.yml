@@ -1,20 +1,55 @@
 site_name: ncorn
 site_description: Production-ready ASGI web server for FastAPI applications
-site_author: White NEFOR
 site_url: https://ncorn.readthedocs.io/
-
-docs_dir: docs
-
-repo_url: https://github.com/ndugram/ncorn
 repo_name: ndugram/ncorn
+repo_url: https://github.com/ndugram/ncorn
+edit_uri: edit/main/docs/
 
-copyright: |
-  Copyright &copy; 2026 White NEFOR
+strict: true
+
+theme:
+  name: material
+  logo: logo.png
+  favicon: logo.png
+
+  palette:
+    - scheme: "default"
+      media: "(prefers-color-scheme: light)"
+      toggle:
+        icon: "material/lightbulb"
+        name: "Switch to dark mode"
+    - scheme: "slate"
+      media: "(prefers-color-scheme: dark)"
+      primary: "deep orange"
+      accent: "orange"
+      toggle:
+        icon: "material/lightbulb-outline"
+        name: "Switch to light mode"
+
+  icon:
+    repo: fontawesome/brands/github
+
+  features:
+    - content.code.annotate
+    - content.code.copy
+    - content.tabs.link
+    - navigation.footer
+    - navigation.path
+    - navigation.sections
+    - navigation.top
+    - navigation.tracking
+    - search.suggest
+    - search.highlight
+    - toc.follow
 
 extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/ndugram/ncorn
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/ncorn
+    - icon: fontawesome/brands/twitter
+      link: https://x.com/ncorn_dev
 
   alternate:
     - link: /
@@ -22,80 +57,66 @@ extra:
     - link: /ru/
       name: Russian
 
-nav:
-  - Home: index.md
-  - English:
-    - Quick Start: en/quick-start.md
-    - CLI: en/cli.md
-    - Configuration: en/configuration.md
-    - Examples: en/examples.md
-    - Dependencies: en/dependencies.md
-    - Security: en/security.md
-    - Middleware: en/middleware.md
-    - API Reference: en/api-reference.md
-  - Russian:
-    - Main: ru/index.md
-    - Quick Start: ru/quick-start.md
-    - CLI: ru/cli.md
-    - Configuration: ru/configuration.md
-    - Examples: ru/examples.md
-    - Dependencies: ru/dependencies.md
-    - Security: ru/security.md
-    - Middleware: ru/middleware.md
-    - API Reference: ru/api-reference.md
-
-theme:
-  name: material
-  language: en
-  logo: logo.png
-  favicon: logo.png
-
-  icon:
-    repo: fontawesome/brands/github
-
-  palette:
-    - scheme: default
-      primary: deep orange
-      accent: orange
-      toggle:
-        icon: material/weather-night
-        name: Switch to dark mode
-
-    - scheme: slate
-      primary: deep orange
-      accent: orange
-      toggle:
-        icon: material/weather-sunny
-        name: Switch to light mode
-
-  features:
-    - navigation.instant
-    - navigation.tracking
-    - navigation.tabs
-    - navigation.tabs.sticky
-    - navigation.tabs.hover
-    - navigation.sections
-    - navigation.expand
-    - navigation.top
-    - content.code.copy
-    - content.code.annotate
-    - search.suggest
-    - search.highlight
-
 markdown_extensions:
-  - admonition
-  - tables
   - attr_list
+  - admonition
+  - codehilite:
+      css_class: highlight
   - toc:
       permalink: true
-  - pymdownx.highlight:
-      anchor_linenums: true
+  - pymdownx.details
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
-  - pymdownx.details
   - pymdownx.tabbed:
       alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.extra:
 
 plugins:
   - search
+  - mkdocstrings:
+      handlers:
+        python:
+          inventory:
+            - https://docs.python.org/3/objects.inv
+
+nav:
+  - Welcome: 
+    - en: en/index.md
+    - ru: ru/index.md
+  - Installation:
+    - en: en/installation.md
+    - ru: ru/installation.md
+  - Settings:
+    - en: en/settings.md
+    - ru: ru/settings.md
+  - Server Behavior:
+    - en: en/server-behavior.md
+    - ru: ru/server-behavior.md
+  - Concepts:
+    - en: en/concepts/asgi.md
+    - ru: ru/concepts/asgi.md
+    - Lifespan:
+      - en: en/concepts/lifespan.md
+      - ru: ru/concepts/lifespan.md
+    - WebSockets:
+      - en: en/concepts/websockets.md
+      - ru: ru/concepts/websockets.md
+  - Deployment:
+    - Deployment:
+      - en: en/deployment/index.md
+      - ru: ru/deployment/index.md
+    - Docker:
+      - en: en/deployment/docker.md
+      - ru: ru/deployment/docker.md
+  - API Reference:
+    - en: en/api-reference.md
+    - ru: ru/api-reference.md
+  - Contributing:
+    - en: en/contributing.md
+    - ru: ru/contributing.md
