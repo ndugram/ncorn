@@ -6,7 +6,7 @@ _ncorn is a production-ready ASGI web server for FastAPI applications._
 
 ---
 
-**Documentation**: [https://ncorn.ndugram.dev](https://ncorn.readthedocs.io/)
+**Documentation**: [https://ncorn.ndugram.dev](https://ncorn.ndugram.dev/)
 
 **Source Code**: [https://github.com/ndugram/ncorn](https://github.com/ndugram/ncorn)
 
