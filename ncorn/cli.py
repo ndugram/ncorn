@@ -101,6 +101,23 @@ def parse_args(args: Optional[list[str]] = None) -> argparse.Namespace:
         action="store_true",
         help="Enable verbose logging",
     )
+    parser.add_argument(
+        "--ssl-keyfile",
+        default=None,
+        help="Path to SSL key file",
+    )
+    parser.add_argument(
+        "--ssl-certfile",
+        default=None,
+        help="Path to SSL certificate file",
+    )
+    parser.add_argument(
+        "--ssl-version",
+        type=int,
+        default=None,
+        choices=[2, 3, 4, 5],
+        help="SSL/TLS version: 2=TLSv1, 3=TLSv1.1, 4=TLSv1.2, 5=TLSv1.3",
+    )
     return parser.parse_args(args)
 
 
@@ -131,6 +148,9 @@ def merge_config(file_config: Config, args: argparse.Namespace) -> Config:
         ip_blacklist=file_config.ip_blacklist,
         enable_security_headers=file_config.enable_security_headers,
         waf_max_query_length=file_config.waf_max_query_length,
+        ssl_keyfile=args.ssl_keyfile if args.ssl_keyfile is not None else file_config.ssl_keyfile,
+        ssl_certfile=args.ssl_certfile if args.ssl_certfile is not None else file_config.ssl_certfile,
+        ssl_version=args.ssl_version if args.ssl_version is not None else file_config.ssl_version,
     )
 
 
@@ -329,7 +349,8 @@ def main(args: Optional[list[str]] = None) -> None:
             [],
         )
     elif config.workers > 1:
-        logger.server_start(config.host, config.port, config.workers)
+        protocol = "https" if (config.ssl_keyfile and config.ssl_certfile) else "http"
+        logger.server_start(config.host, config.port, config.workers, protocol)
         run_workers(parsed.app, config)
     else:
         try:
