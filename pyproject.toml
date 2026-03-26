@@ -40,3 +40,9 @@ include = ["ncorn*"]
 
 [tool.setuptools.package-data]
 ncorn = ["py.typed"]
+
+[project.optional-dependencies]
+docs = [
+    "mkdocs-material>=9.0.0",
+    "mkdocs>=1.5.0",
+]

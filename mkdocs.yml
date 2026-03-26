@@ -79,11 +79,6 @@ markdown_extensions:
 
 plugins:
   - search
-  - mkdocstrings:
-      handlers:
-        python:
-          inventory:
-            - https://docs.python.org/3/objects.inv
 
 nav:
   - Welcome: 
