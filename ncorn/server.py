@@ -1,4 +1,5 @@
 import asyncio
+import ssl
 import time
 from typing import Optional, Annotated
 from collections import defaultdict
@@ -59,6 +60,14 @@ class ConnectionLimiter:
 class HTTPServer:
     """Async TCP HTTP server for FastAPI applications."""
 
+    # TLS version mapping
+    TLS_VERSIONS = {
+        2: ssl.TLSVersion.TLSv1,
+        3: ssl.TLSVersion.TLSv1_1,
+        4: ssl.TLSVersion.TLSv1_2,
+        5: ssl.TLSVersion.TLSv1_3,
+    }
+
     def __init__(
         self,
         app: Annotated[
@@ -85,22 +94,41 @@ class HTTPServer:
             config.max_connections_per_ip,
         )
 
+    def _create_ssl_context(self) -> ssl.SSLContext:
+        """Create SSL context for HTTPS server."""
+        ssl_version = self.TLS_VERSIONS.get(self.config.ssl_version, ssl.TLSVersion.TLSv1_3)
+        
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        context.load_cert_chain(self.config.ssl_certfile, self.config.ssl_keyfile)
+        context.minimum_version = ssl_version
+        
+        return context
+
     async def start(self, show_banner: Annotated[
         bool,
         Doc("Whether to show startup banner")
     ] = True) -> None:
         """Start the HTTP server."""
+        ssl_context = None
+        
+        if self.config.ssl_keyfile and self.config.ssl_certfile:
+            ssl_context = self._create_ssl_context()
+            tls_version = {2: "TLSv1", 3: "TLSv1.1", 4: "TLSv1.2", 5: "TLSv1.3"}.get(self.config.ssl_version, "TLSv1.3")
+            logger.info(f"SSL enabled: {tls_version}")
+
         self.server = await asyncio.start_server(
             self._handle_connection,
             self.config.host,
             self.config.port,
             reuse_address=True,
             reuse_port=True,
+            ssl=ssl_context,
         )
 
         if show_banner:
             addr = self.server.sockets[0].getsockname()
-            logger.server_start(addr[0], addr[1], self.config.workers)
+            protocol = "https" if ssl_context else "http"
+            logger.server_start(addr[0], addr[1], self.config.workers, protocol)
 
         try:
             async with self.server:

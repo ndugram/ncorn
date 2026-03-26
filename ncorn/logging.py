@@ -139,9 +139,13 @@ class Logger:
     ], workers: Annotated[
         int,
         Doc("Number of workers")
-    ]) -> None:
+    ], protocol: Annotated[
+        str,
+        Doc("HTTP protocol (http or https)")
+    ] = "http"
+    ) -> None:
         """Log server startup."""
-        addr = f"http://{host}:{port}"
+        addr = f"{protocol}://{host}:{port}"
         print()
         print(self._format("ncorn", "Application startup complete", Colors.CYAN))
         print(self._format("ncorn", f"Ncorn running on {addr} (Press CTRL+C to quit)", Colors.GREEN))

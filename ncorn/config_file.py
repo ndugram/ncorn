@@ -56,6 +56,9 @@ def load_config_from_file(config_path: Optional[str] = None) -> Config:
         ip_blacklist=data.get("ip_blacklist", []),
         enable_security_headers=data.get("enable_security_headers", True),
         waf_max_query_length=data.get("waf_max_query_length", 4096),
+        ssl_keyfile=data.get("ssl_keyfile"),
+        ssl_certfile=data.get("ssl_certfile"),
+        ssl_version=data.get("ssl_version", 5),
     )
 
 
@@ -90,6 +93,9 @@ def create_default_config(path: Optional[str] = None) -> None:
         "ip_blacklist": config.ip_blacklist,
         "enable_security_headers": config.enable_security_headers,
         "waf_max_query_length": config.waf_max_query_length,
+        "ssl_keyfile": config.ssl_keyfile,
+        "ssl_certfile": config.ssl_certfile,
+        "ssl_version": config.ssl_version,
     }
     
     with open(path, "w") as f:

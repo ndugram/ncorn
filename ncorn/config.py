@@ -115,6 +115,19 @@ class Config:
         Doc("Maximum length of query string in bytes for WAF protection.")
     ] = 4096
 
+    ssl_keyfile: Annotated[
+        str | None,
+        Doc("Path to SSL key file for HTTPS. Leave empty to disable SSL.")
+    ] = None
+    ssl_certfile: Annotated[
+        str | None,
+        Doc("Path to SSL certificate file for HTTPS.")
+    ] = None
+    ssl_version: Annotated[
+        int,
+        Doc("SSL/TLS version: 2=TLSv1, 3=TLSv1.1, 4=TLSv1.2, 5=TLSv1.3. Default: TLSv1.3")
+    ] = 5
+
     def __post_init__(self):
         if self.workers < 1:
             self.workers = 1
@@ -152,3 +165,7 @@ class Config:
             self.drain_timeout = 1.0
         if self.waf_max_query_length < 64:
             self.waf_max_query_length = 4096
+        if self.ssl_version < 2 or self.ssl_version > 5:
+            self.ssl_version = 5
+        if (self.ssl_keyfile and not self.ssl_certfile) or (not self.ssl_keyfile and self.ssl_certfile):
+            raise ValueError("Both ssl_keyfile and ssl_certfile must be provided for SSL")
